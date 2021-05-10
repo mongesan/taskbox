@@ -25,15 +25,6 @@ SECRET_KEY = 'django-insecure-qbb3108iytfs4sy8$wz_v3l#)ksp!bbw2vjm@xict6v98_m%3(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-try:
-    from config.local_settings import *
-except ImportError:
-    pass
-
-if not DEBUG:
-    import django_heroku
-    django_heroku.settings(locals())
-
 ALLOWED_HOSTS = ["m-taskbox.herokuapp.com"]
 
 
@@ -144,3 +135,12 @@ MESSAGE_TAGS = {
     messages.SUCCESS: 'alert alert-success',
     messages.INFO: 'alert alert-primary'
 }
+
+try:
+    from config.local_settings import *
+except ImportError:
+    pass
+
+if not DEBUG:
+    import django_heroku
+    django_heroku.settings(locals())
