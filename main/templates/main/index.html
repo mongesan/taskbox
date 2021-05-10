@@ -1,0 +1,132 @@
+{% extends "main/base.html" %}
+{% load static %}
+{% load mathfilters %}
+{% load bootstrap4 %}
+{% block title %}TaskBox(beta){% endblock title %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'main/css/index.css' %}">{% endblock %}
+{% block content %}
+    <h4 class="mt-4 border-bottom">TaskBox <i class="fas fa-box"></i></h4>
+    <p>Django Project #03 - TaskBox<br>
+    タスク管理用アプリ(仮)<br>
+    ページネーションもログイン機能もまだ付けられてませんが<br>
+    とりあえずこれで公開することにします<br>
+    作成期間: 大体一か月</p>
+    <p>+ Herokuにデプロイ 2021/05/10<br>
+    + Pycharmでプロジェクト作る 2021/04/11</p>
+    <p>bootstrapのおかげでレスポンシブ対応してます<br>
+    リポジトリ:<a href="https://github.com/mongesan">ここ<i class="fab fa-github"></i></a></p>
+    <label class="btn btn-primary btn-sm mb-3" for="form-btn">タスクを追加する</label>
+    <input id="form-btn" type="checkbox">
+    <div class="card mb-3 form-box">
+        <div class="card-body row text-nowrap">
+            <div class="col-sm-12">
+                <h5 class="card-title border-bottom">タスクを作成</h5>
+{#                {{ tasks.first.id|add:"1" }}#}
+                <form action="{% url 'main:task_add' task_id=tasks.first.id|add:"1" %}" method="POST">
+                    {% csrf_token %}
+                    {% bootstrap_form form layout='horizontal' %}
+                    <label class="btn btn-outline-secondary my-1" style="width: 25%" for="form-btn">閉じる</label>
+                    <button type="submit" class="btn btn-outline-primary" style="width: 75%">タスクを作成</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <h4 class="mt-4 border-bottom">タスク一覧<small class="text-muted ml-5">現在時刻 : {% now "SHORT_DATETIME_FORMAT" %}</small></h4>
+    {% for task in tasks %}
+        <div class="card mb-3">
+        <div class="card-body row text-nowrap">
+            <div class="col-sm-6">
+                <h5 class="card-title border-bottom">{{ task.name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted text-wrap">{{ task.comment }}</h6>
+                進捗状況:{{ task.stat }}/{{ task.stat_max }}
+                {% if task.stat == task.stat_max %}
+                    <a href="{% url 'main:task_plus' task_id=task.id %}" class="btn btn-primary btn-sm mb-2 disabled" ><i class="fas fa-plus"></i></a>
+                {% else %}
+                    <a href="{% url 'main:task_plus' task_id=task.id %}" class="btn btn-primary btn-sm mb-2"><i class="fas fa-plus"></i></a>
+                {% endif %}
+                {% if task.stat == 0 %}
+                    <a href="{% url 'main:task_minus' task_id=task.id %}" class="btn btn-danger btn-sm mb-2 disabled"><i class="fas fa-minus"></i></a>
+                {% else %}
+                    <a href="{% url 'main:task_minus' task_id=task.id %}" class="btn btn-danger btn-sm mb-2"><i class="fas fa-minus"></i></a>
+                {% endif %}
+                <div class="progress">
+                <div class="progress-bar progress-bar-striped bg-success" role="progressbar" style="width: {{ task.stat|mul:100|div:task.stat_max }}%">{{ task.stat }}/{{ task.stat_max }}</div>
+                </div>
+                </div>
+            <div class="col-sm-4" style="border-left: solid 1px rgba(0,0,0,.125); border-right: solid 1px rgba(0,0,0,.125);">
+                {% if task.deadline < time %}
+                    期限切れ:
+                    <h5 class="card-title my-0 text-danger">{{ task.deadline|date:"Y/m/d(D)" }}</h5>
+                {% else %}
+                    期限:
+                    {% if task.stat_max == task.stat %}
+                        <h5 class="card-title my-0 text-success">{{ task.deadline|date:"Y/m/d(D)" }}</h5>
+                    {% else %}
+                        <h5 class="card-title my-0">{{ task.deadline|date:"Y/m/d(D)" }}</h5>
+                    {% endif %}
+                {% endif %}
+{#                <a class="btn btn-outline-primary btn-sm mb-2"><i class="far fa-calendar-plus"></i></a>#}
+{#                <a class="btn btn-outline-info btn-sm mb-2"><i class="fab fa-twitter"></i></a>#}
+{#                <a href="#edit-btn{{ task.id }}"><label class="btn btn-outline-secondary btn-sm my-2" for="edit-btn{{ task.id }}"><i class="fas fa-cog"></i></label></a>#}
+                <label class="btn btn-outline-secondary btn-sm my-2" style="width: 50%" for="edit-btn{{ task.id }}"><i class="fas fa-cog"></i></label>
+                <a href="{% url 'main:task_delete' task_id=task.id %}" class="btn btn-outline-danger btn-sm my-2 del_confirm" data-toggle="modal" data-target="#deleteModal"
+                       data-pk="{{ task.id }}"
+                       data-url="{% url 'main:task_delete' task_id=task.id %}" style="width: 50%"><i class="fas fa-trash-alt"></i></a>
+                <h6 class="card-subtitle text-muted" style="font-size: 15px">ID: {{ task.id }}</h6>
+            </div>
+            <div class="col-sm-2" style="text-align: center;">
+                {% if task.stat == task.stat_max %}
+                    <h6 class="card-subtitle mb-2 text-success">完了!</h6>
+                    <a href="{% url 'main:task_finish' task_id=task.id %}" class="btn btn-success mb-2 btn-lg check"><i class="fas fa-check"></i></a>
+                {% else %}
+                    <h6 class="card-subtitle mb-2 text-muted">未完了</h6>
+                    <a class="btn btn-secondary mb-2 btn-lg disabled" style="font-size: 30px;box-shadow: #303030 0 10px;"><i class="fas fa-check"></i></a>
+                {% endif %}
+            </div>
+        </div>
+        <input id="edit-btn{{ task.id }}" class="edit-btn" type="checkbox">
+        <div class="card-body row text-nowrap disp-box edit-box" id="edit-btn{{ task.id }}">
+            <div class="col-sm-12">
+                <h5 class="card-title border-bottom">タスクを編集</h5>
+                <form action="{% url 'main:task_add' task.id %}" method="POST">
+                    {% csrf_token %}
+                    {% bootstrap_form form layout='horizontal' %}
+                    <label class="btn btn-outline-secondary my-1" style="width: 25%" for="edit-btn{{ task.id }}">閉じる</label>
+                    <button type="submit" class="btn btn-outline-primary my-1" style="width: 75%">編集完了</button>
+                </form>
+            </div>
+        </div>
+        </div>
+        {# 削除を確認するモーダル ダイアログ #}
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">削除の確認</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p>タスクを削除してもよろしいですか？</p>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="btn btn-danger" id="del_url" style="width: 48%">OK</a>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" style="width: 48%">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+{% endblock content %}
+{% block extra_js %}
+    <script>
+        $(function () {
+            $('.del_confirm').on('click', function () {
+                $("#del_pk").text($(this).data("pk"));
+                $('#del_url').attr('href', $(this).data("url"));
+            });
+        });
+    </script>
+{% endblock %}
